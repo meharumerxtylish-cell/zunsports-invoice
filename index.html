@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Zunsports Invoice Maker</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Segoe UI', Arial, Helvetica, sans-serif; background:#eef1f5; color:#1c2733; }
+  .wrap { display:flex; gap:18px; max-width:1240px; margin:0 auto; padding:16px; align-items:flex-start; }
+  /* ---------- editor ---------- */
+  .editor { width:350px; flex:none; background:#fff; border-radius:12px; padding:18px; box-shadow:0 2px 10px rgba(20,40,80,.08); position:sticky; top:16px; max-height:calc(100vh - 32px); overflow:auto; }
+  .editor h2 { font-size:17px; color:#12284b; margin-bottom:4px; }
+  .editor p.sub { font-size:12px; color:#7a8794; margin-bottom:14px; }
+  .editor h3 { font-size:12px; text-transform:uppercase; letter-spacing:.08em; color:#8a97a5; margin:16px 0 8px; border-top:1px solid #edf0f3; padding-top:12px; }
+  .editor label { display:block; font-size:12px; font-weight:600; color:#48586a; margin:8px 0 4px; }
+  .editor input, .editor select, .editor textarea { width:100%; padding:8px 10px; border:1px solid #d5dce3; border-radius:8px; font-size:13.5px; font-family:inherit; background:#fbfcfe; }
+  .editor textarea { resize:vertical; min-height:52px; }
+  .row2 { display:flex; gap:8px; } .row2 > div { flex:1; }
+  .item-edit { background:#f5f8fc; border:1px solid #e2eaf3; border-radius:10px; padding:10px; margin-bottom:10px; }
+  .item-edit .del { float:right; background:#fdecec; color:#b3261e; border:none; border-radius:6px; padding:2px 8px; font-size:12px; cursor:pointer; }
+  .btn { display:block; width:100%; padding:11px; border:none; border-radius:9px; font-size:14px; font-weight:700; cursor:pointer; margin-top:10px; }
+  .btn-add { background:#eef3fa; color:#12284b; border:1px dashed #9db6d6; }
+  .btn-print { background:#12284b; color:#fff; }
+  .btn-ghost { background:#fff; color:#48586a; border:1px solid #d5dce3; font-weight:600; }
+  .btn-sample { background:#fff7e8; color:#8a5a00; border:1px solid #f0d9a0; font-weight:600; }
+  /* ---------- invoice sheet ---------- */
+  .sheet { flex:1; background:#fff; border-radius:6px; box-shadow:0 4px 24px rgba(20,40,80,.12); padding:44px 48px; min-width:0; }
+  .inv-head { display:flex; justify-content:space-between; align-items:flex-start; border-bottom:3px solid #12284b; padding-bottom:18px; }
+  .brand { display:flex; gap:14px; align-items:center; }
+  .brand img { width:64px; height:64px; object-fit:contain; }
+  .brand .co { font-size:24px; font-weight:800; color:#12284b; letter-spacing:.02em; }
+  .brand .tag { font-size:12px; color:#7a8794; }
+  .inv-title { text-align:right; }
+  .inv-title .t { font-size:30px; font-weight:800; color:#12284b; letter-spacing:.14em; }
+  .inv-title .no { font-size:13px; color:#48586a; margin-top:4px; }
+  .meta { display:flex; justify-content:space-between; gap:20px; margin-top:22px; }
+  .meta .block { font-size:13px; line-height:1.55; color:#33465c; }
+  .meta .lbl { font-size:11px; font-weight:700; letter-spacing:.1em; color:#8a97a5; text-transform:uppercase; margin-bottom:4px; }
+  .meta .name { font-size:15px; font-weight:700; color:#12284b; }
+  .meta table { border-collapse:collapse; font-size:13px; }
+  .meta table td { padding:2px 0 2px 14px; } .meta table td:first-child { color:#8a97a5; padding-left:0; }
+  table.items { width:100%; border-collapse:collapse; margin-top:26px; font-size:13.5px; }
+  table.items th { background:#12284b; color:#fff; text-align:left; padding:10px 12px; font-size:12px; letter-spacing:.06em; text-transform:uppercase; }
+  table.items th.r, table.items td.r { text-align:right; }
+  table.items td { padding:10px 12px; border-bottom:1px solid #e6ebf0; color:#26374a; vertical-align:top; }
+  table.items tr:last-child td { border-bottom:2px solid #12284b; }
+  .totals { display:flex; justify-content:flex-end; margin-top:16px; }
+  .totals table { border-collapse:collapse; font-size:13.5px; min-width:300px; }
+  .totals td { padding:6px 10px; color:#33465c; } .totals td.r { text-align:right; font-weight:600; }
+  .totals tr.grand td { background:#12284b; color:#fff; font-size:16px; font-weight:800; padding:10px; }
+  .totals tr.grand td.r { color:#fff; }
+  .notes { margin-top:30px; display:flex; gap:28px; }
+  .notes .block { flex:1; font-size:12.5px; line-height:1.6; color:#48586a; white-space:pre-line; }
+  .notes .lbl { font-size:11px; font-weight:700; letter-spacing:.1em; color:#8a97a5; text-transform:uppercase; margin-bottom:5px; }
+  .foot { margin-top:34px; border-top:1px solid #e6ebf0; padding-top:12px; text-align:center; font-size:12px; color:#8a97a5; }
+  @media (max-width:900px){ .wrap{flex-direction:column;} .editor{width:100%; position:static; max-height:none;} .sheet{padding:26px 20px;} }
+  @media print {
+    body { background:#fff; }
+    .editor { display:none !important; }
+    .wrap { padding:0; display:block; }
+    .sheet { box-shadow:none; border-radius:0; padding:10px 6px; }
+    @page { size:A4; margin:14mm; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <!-- ================= EDITOR ================= -->
+  <div class="editor">
+    <h2>🧾 Invoice Maker</h2>
+    <p class="sub">Data dalo — invoice khud ban jayegi. Print / PDF ke liye neeche button hai.</p>
+
+    <h3>Invoice</h3>
+    <div class="row2">
+      <div><label>Invoice No</label><input id="f_invno"></div>
+      <div><label>Currency</label>
+        <select id="f_cur">
+          <option value="USD">USD $</option><option value="EUR">EUR €</option>
+          <option value="GBP">GBP £</option><option value="PKR">PKR Rs</option>
+        </select></div>
+    </div>
+    <div class="row2">
+      <div><label>Issue Date</label><input id="f_date" type="date"></div>
+      <div><label>Due Date</label><input id="f_due" type="date"></div>
+    </div>
+
+    <h3>Your Company</h3>
+    <label>Company Name</label><input id="f_coname">
+    <label>Tagline</label><input id="f_cotag">
+    <label>Address</label><textarea id="f_coaddr"></textarea>
+    <label>Email</label><input id="f_coemail">
+
+    <h3>Bill To (Customer)</h3>
+    <label>Customer / Company</label><input id="f_bname" placeholder="e.g. Solejunky">
+    <label>Contact Person</label><input id="f_bperson" placeholder="e.g. Jochem">
+    <label>Address</label><textarea id="f_baddr" placeholder="Street, City, Country"></textarea>
+    <label>Email</label><input id="f_bemail" placeholder="customer@email.com">
+
+    <h3>Items</h3>
+    <div id="items_edit"></div>
+    <button class="btn btn-add" onclick="addItem()">+ Add Item</button>
+
+    <h3>Totals</h3>
+    <div class="row2">
+      <div><label>Discount %</label><input id="f_disc" type="number" min="0" max="100" step="0.5" value="0"></div>
+      <div><label>Shipping</label><input id="f_ship" type="number" min="0" step="0.01" value="0"></div>
+    </div>
+    <div class="row2">
+      <div><label>Advance Paid</label><input id="f_adv" type="number" min="0" step="0.01" value="0"></div>
+      <div><label>Tax %</label><input id="f_tax" type="number" min="0" max="100" step="0.5" value="0"></div>
+    </div>
+
+    <h3>Notes</h3>
+    <label>Payment Details</label><textarea id="f_pay"></textarea>
+    <label>Terms</label><textarea id="f_terms"></textarea>
+
+    <button class="btn btn-sample" onclick="loadSample()">⭐ Load Solejunky Order (sample)</button>
+    <button class="btn btn-print" onclick="window.print()">🖨 Print / Save PDF</button>
+    <button class="btn btn-ghost" onclick="saveInvoice()">💾 Save Invoice</button>
+    <button class="btn btn-ghost" onclick="newInvoice()">🆕 New Invoice</button>
+    <div id="saved_list" style="margin-top:10px;font-size:12.5px;"></div>
+  </div>
+
+  <!-- ================= INVOICE SHEET ================= -->
+  <div class="sheet">
+    <div class="inv-head">
+      <div class="brand">
+        <img src="logo.png" alt="logo" onerror="this.style.display='none'">
+        <div>
+          <div class="co" id="v_coname"></div>
+          <div class="tag" id="v_cotag"></div>
+        </div>
+      </div>
+      <div class="inv-title">
+        <div class="t">INVOICE</div>
+        <div class="no" id="v_invno"></div>
+      </div>
+    </div>
+
+    <div class="meta">
+      <div class="block">
+        <div class="lbl">From</div>
+        <div class="name" id="v_coname2"></div>
+        <div id="v_coaddr" style="white-space:pre-line"></div>
+        <div id="v_coemail"></div>
+      </div>
+      <div class="block">
+        <div class="lbl">Bill To</div>
+        <div class="name" id="v_bname"></div>
+        <div id="v_bperson"></div>
+        <div id="v_baddr" style="white-space:pre-line"></div>
+        <div id="v_bemail"></div>
+      </div>
+      <div class="block">
+        <table>
+          <tr><td>Invoice No</td><td><b id="v_invno2"></b></td></tr>
+          <tr><td>Issue Date</td><td id="v_date"></td></tr>
+          <tr><td>Due Date</td><td id="v_due"></td></tr>
+          <tr><td>Currency</td><td id="v_cur"></td></tr>
+        </table>
+      </div>
+    </div>
+
+    <table class="items">
+      <thead><tr>
+        <th style="width:46%">Description</th><th class="r">Qty</th>
+        <th class="r">Unit Price</th><th class="r">Amount</th>
+      </tr></thead>
+      <tbody id="v_items"></tbody>
+    </table>
+
+    <div class="totals"><table>
+      <tr><td>Subtotal</td><td class="r" id="v_sub"></td></tr>
+      <tr id="row_disc"><td>Discount</td><td class="r" id="v_disc"></td></tr>
+      <tr id="row_tax"><td>Tax</td><td class="r" id="v_tax"></td></tr>
+      <tr id="row_ship"><td>Shipping</td><td class="r" id="v_ship"></td></tr>
+      <tr class="grand"><td>TOTAL</td><td class="r" id="v_total"></td></tr>
+      <tr id="row_adv"><td>Advance Paid</td><td class="r" id="v_adv"></td></tr>
+      <tr id="row_bal"><td><b>Balance Due</b></td><td class="r"><b id="v_bal"></b></td></tr>
+    </table></div>
+
+    <div class="notes">
+      <div class="block"><div class="lbl">Payment Details</div><div id="v_pay"></div></div>
+      <div class="block"><div class="lbl">Terms &amp; Notes</div><div id="v_terms"></div></div>
+    </div>
+
+    <div class="foot">Thank you for your business — <span id="v_coname3"></span></div>
+  </div>
+</div>
+<script>
+const $ = id => document.getElementById(id);
+const SYM = { USD:'$', EUR:'€', GBP:'£', PKR:'Rs ' };
+let items = [ {desc:'', qty:1, price:0} ];
+
+const DEFAULTS = {
+  coname:'ZUNSPORTS', cotag:'Custom Sportswear Manufacturer — Sialkot, Pakistan',
+  coaddr:'Sialkot, Punjab, Pakistan', coemail:'zunsports03@gmail.com',
+  pay:'Payment by bank transfer / Wise.\nPlease use the invoice number as the payment reference.\nBank details are shared with the proforma invoice.',
+  terms:'50% advance to start production, balance before shipment.\nProduction starts after advance and sample approval.\nPlease check all details and confirm the order in writing.'
+};
+
+function money(n){ const c=$('f_cur').value; return SYM[c] + Number(n||0).toLocaleString('en-US',{minimumFractionDigits:2, maximumFractionDigits:2}); }
+function fmtDate(v){ if(!v) return '—'; const d=new Date(v+'T00:00:00'); return d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}); }
+
+function renderItemsEdit(){
+  $('items_edit').innerHTML = items.map((it,i)=>`
+    <div class="item-edit">
+      <button class="del" onclick="delItem(${i})">✕</button>
+      <label>Description</label>
+      <input value="${it.desc.replace(/"/g,'&quot;')}" oninput="items[${i}].desc=this.value;render()" placeholder="e.g. Crewneck — Stone Grey, 300 GSM fleece">
+      <div class="row2">
+        <div><label>Qty</label><input type="number" min="0" step="1" value="${it.qty}" oninput="items[${i}].qty=parseFloat(this.value)||0;render()"></div>
+        <div><label>Unit Price</label><input type="number" min="0" step="0.01" value="${it.price}" oninput="items[${i}].price=parseFloat(this.value)||0;render()"></div>
+      </div>
+    </div>`).join('');
+}
+function addItem(){ items.push({desc:'', qty:1, price:0}); renderItemsEdit(); render(); }
+function delItem(i){ items.splice(i,1); if(!items.length) items=[{desc:'',qty:1,price:0}]; renderItemsEdit(); render(); }
+
+function render(){
+  const g = id => $(id).value;
+  $('v_coname').textContent = g('f_coname'); $('v_coname2').textContent = g('f_coname'); $('v_coname3').textContent = g('f_coname');
+  $('v_cotag').textContent = g('f_cotag');
+  $('v_coaddr').textContent = g('f_coaddr'); $('v_coemail').textContent = g('f_coemail');
+  $('v_bname').textContent = g('f_bname') || '—';
+  $('v_bperson').textContent = g('f_bperson');
+  $('v_baddr').textContent = g('f_baddr'); $('v_bemail').textContent = g('f_bemail');
+  $('v_invno').textContent = '# ' + g('f_invno'); $('v_invno2').textContent = g('f_invno');
+  $('v_date').textContent = fmtDate(g('f_date')); $('v_due').textContent = fmtDate(g('f_due'));
+  $('v_cur').textContent = g('f_cur');
+  $('v_pay').textContent = g('f_pay'); $('v_terms').textContent = g('f_terms');
+
+  let sub = 0;
+  $('v_items').innerHTML = items.map(it=>{
+    const amt = (it.qty||0)*(it.price||0); sub += amt;
+    return `<tr><td>${it.desc || '—'}</td><td class="r">${it.qty||0}</td><td class="r">${money(it.price)}</td><td class="r">${money(amt)}</td></tr>`;
+  }).join('');
+
+  const discP = parseFloat(g('f_disc'))||0, taxP = parseFloat(g('f_tax'))||0;
+  const ship = parseFloat(g('f_ship'))||0, adv = parseFloat(g('f_adv'))||0;
+  const disc = sub*discP/100, tax = (sub-disc)*taxP/100;
+  const total = sub - disc + tax + ship, bal = total - adv;
+  $('v_sub').textContent = money(sub);
+  $('row_disc').style.display = discP>0 ? '' : 'none';
+  $('v_disc').textContent = '− ' + money(disc) + (discP>0 ? ` (${discP}%)` : '');
+  $('row_tax').style.display = taxP>0 ? '' : 'none';
+  $('v_tax').textContent = money(tax) + (taxP>0 ? ` (${taxP}%)` : '');
+  $('row_ship').style.display = ship>0 ? '' : 'none';
+  $('v_ship').textContent = money(ship);
+  $('v_total').textContent = money(total);
+  $('row_adv').style.display = adv>0 ? '' : 'none';
+  $('v_adv').textContent = '− ' + money(adv);
+  $('row_bal').style.display = adv>0 ? '' : 'none';
+  $('v_bal').textContent = money(bal);
+}
+
+function collect(){
+  const o = {}; document.querySelectorAll('.editor input, .editor select, .editor textarea').forEach(el=>o[el.id]=el.value);
+  o.items = items; return o;
+}
+function apply(o){
+  Object.keys(o).forEach(k=>{ const el=$(k); if(el && k!=='items') el.value=o[k]; });
+  items = o.items && o.items.length ? o.items : [{desc:'',qty:1,price:0}];
+  renderItemsEdit(); render(); renderSaved();
+}
+function saveInvoice(){
+  const o = collect(); const all = JSON.parse(localStorage.getItem('zs_invoices')||'{}');
+  all[o.f_invno] = o; localStorage.setItem('zs_invoices', JSON.stringify(all));
+  renderSaved(); alert('Invoice saved: ' + o.f_invno);
+}
+function renderSaved(){
+  const all = JSON.parse(localStorage.getItem('zs_invoices')||'{}');
+  const keys = Object.keys(all);
+  $('saved_list').innerHTML = keys.length ? '<b>Saved invoices:</b><br>' + keys.map(k=>
+    `<a href="#" onclick="loadSaved('${k}');return false;">${k}</a> — ${all[k].f_bname||''} (${all[k].f_cur||''})`).join('<br>') : '';
+}
+function loadSaved(k){ const all = JSON.parse(localStorage.getItem('zs_invoices')||'{}'); if(all[k]) apply(all[k]); }
+function nextNo(){
+  let n = parseInt(localStorage.getItem('zs_counter')||'0')+1;
+  localStorage.setItem('zs_counter', String(n));
+  return 'ZS-' + new Date().getFullYear() + '-' + String(n).padStart(3,'0');
+}
+function newInvoice(){
+  const today = new Date(), due = new Date(Date.now()+7*864e5);
+  const iso = d => d.toISOString().slice(0,10);
+  apply({ f_invno: nextNo(), f_cur:'USD', f_date: iso(today), f_due: iso(due),
+    f_coname: DEFAULTS.coname, f_cotag: DEFAULTS.cotag, f_coaddr: DEFAULTS.coaddr, f_coemail: DEFAULTS.coemail,
+    f_bname:'', f_bperson:'', f_baddr:'', f_bemail:'',
+    f_disc:0, f_ship:0, f_adv:0, f_tax:0, f_pay: DEFAULTS.pay, f_terms: DEFAULTS.terms,
+    items:[{desc:'',qty:1,price:0}] });
+}
+function loadSample(){
+  const today = new Date(), due = new Date(Date.now()+7*864e5);
+  const iso = d => d.toISOString().slice(0,10);
+  apply({ f_invno: $('f_invno').value || nextNo(), f_cur:'USD', f_date: iso(today), f_due: iso(due),
+    f_coname: DEFAULTS.coname, f_cotag: DEFAULTS.cotag, f_coaddr: DEFAULTS.coaddr, f_coemail: DEFAULTS.coemail,
+    f_bname:'Solejunky', f_bperson:'Jochem', f_baddr:'Netherlands', f_bemail:'info@solejunky.nl',
+    f_disc:25, f_ship:0, f_adv:0, f_tax:0, f_pay: DEFAULTS.pay, f_terms: DEFAULTS.terms,
+    items:[
+      {desc:'Crewneck — Stone Grey, 300 GSM brushed fleece (90% cotton / 10% polyester)', qty:10, price:25},
+      {desc:'Crewneck — Clay, 300 GSM brushed fleece (90% cotton / 10% polyester)', qty:10, price:25},
+      {desc:'Shorts — Stone Grey, 300 GSM brushed fleece (90% cotton / 10% polyester)', qty:10, price:15},
+      {desc:'Shorts — Clay, 300 GSM brushed fleece (90% cotton / 10% polyester)', qty:10, price:15}
+    ]});
+}
+document.querySelectorAll('.editor input, .editor select, .editor textarea').forEach(el=>el.addEventListener('input', render));
+newInvoice();
+</script>
+</body>
+</html>
